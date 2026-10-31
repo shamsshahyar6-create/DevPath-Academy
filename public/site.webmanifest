@@ -1,0 +1,19 @@
+{
+  "name": "Code Workshop — Complete Web Course",
+  "short_name": "Code Workshop",
+  "description": "An eight-week, bilingual, hands-on web development course.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#2865dc",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
