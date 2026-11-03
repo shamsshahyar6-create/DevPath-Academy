@@ -11,8 +11,17 @@ const lessons = courseWeeks.flatMap((week) =>
   week.lessons.map((lesson) => ({ weekId: week.id, lesson })),
 );
 
-check(courseWeeks.length === 8, `Expected 8 weeks, found ${courseWeeks.length}.`);
-check(lessons.length === 42, `Expected 42 lessons, found ${lessons.length}.`);
+check(courseWeeks.length === 16, `Expected 16 weeks, found ${courseWeeks.length}.`);
+check(lessons.length === 69, `Expected 69 lessons, found ${lessons.length}.`);
+
+for (const week of courseWeeks) {
+  check(
+    week.lessons.length >= 4,
+    `${week.id} needs at least four lessons, found ${week.lessons.length}.`,
+  );
+  check(week.goals?.fa?.length >= 5, `${week.id} needs at least five week goals.`);
+  check(week.goals?.en?.length === week.goals?.fa?.length, `${week.id} week goal counts differ.`);
+}
 
 const weekIds = courseWeeks.map((week) => week.id);
 check(new Set(weekIds).size === weekIds.length, 'Week ids must be unique.');
@@ -28,6 +37,19 @@ for (const { weekId, lesson } of lessons) {
   check(lesson.goals?.en?.length === lesson.goals?.fa?.length, `${prefix} goal counts differ.`);
   check(lesson.steps?.fa?.length >= 3, `${prefix} needs at least three steps.`);
   check(lesson.steps?.en?.length === lesson.steps?.fa?.length, `${prefix} step counts differ.`);
+  if (lesson.deepDive) {
+    check(lesson.deepDive.fa?.length >= 2, `${prefix} needs at least two concept notes.`);
+    check(
+      lesson.deepDive.en?.length === lesson.deepDive.fa?.length,
+      `${prefix} concept note counts differ.`,
+    );
+    check(
+      [...lesson.deepDive.fa, ...lesson.deepDive.en].every(
+        (note) => typeof note === 'string' && note.length > 0,
+      ),
+      `${prefix} has an empty concept note.`,
+    );
+  }
   check(lesson.terms?.length >= 4, `${prefix} needs at least four terms.`);
   check(Boolean(lesson.example?.code), `${prefix} needs an example.`);
   check(
@@ -51,7 +73,17 @@ const checklistItems = [
   ...pullRequestGroups.flatMap((group) => group.sections.flatMap((section) => section.items)),
   ...submissionCheck,
 ];
-const checklistIds = checklistItems.map((item) => item.id);
+const weeklyChecklistIds = courseWeeks.flatMap((week) =>
+  ['lessons', 'deploy', 'checks', 'readme', 'review', 'outcome'].map(
+    (suffix) => `week-submit-${week.id}-${suffix}`,
+  ),
+);
+const milestoneIds = courseWeeks.map((week) => `milestone-${week.id}`);
+const checklistIds = [
+  ...checklistItems.map((item) => item.id),
+  ...weeklyChecklistIds,
+  ...milestoneIds,
+];
 check(new Set(checklistIds).size === checklistIds.length, 'Checklist ids must be unique.');
 check(
   checklistItems.every((item) => item.en && item.fa),
@@ -66,5 +98,5 @@ if (errors.length) {
 
 const minutes = lessons.reduce((sum, { lesson }) => sum + lesson.duration, 0);
 console.log(
-  `Content OK: ${courseWeeks.length} weeks, ${lessons.length} lessons, ${minutes} minutes, ${checklistItems.length} checklist items.`,
+  `Content OK: ${courseWeeks.length} weeks, ${lessons.length} lessons, ${minutes} minutes, ${checklistIds.length} checklist ids.`,
 );

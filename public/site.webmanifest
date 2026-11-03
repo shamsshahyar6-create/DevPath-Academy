@@ -1,11 +1,11 @@
 {
-  "name": "Code Workshop — Complete Web Course",
+  "name": "Code Workshop — Complete Frontend Program",
   "short_name": "Code Workshop",
-  "description": "An eight-week, bilingual, hands-on web development course.",
+  "description": "A sixteen-week, bilingual, hands-on frontend program with three phases and three gates.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f7fb",
-  "theme_color": "#2865dc",
+  "background_color": "#f4f6fc",
+  "theme_color": "#2f5cf6",
   "lang": "fa",
   "dir": "rtl",
   "icons": [

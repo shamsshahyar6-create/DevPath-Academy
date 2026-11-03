@@ -1,14 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { courseWeeks } from './course.js';
+import { conceptExamples } from './concept-examples.js';
+import { coursePhases, courseWeeks, programFacts } from './course.js';
 
 function lessonEntries() {
   return courseWeeks.flatMap((week) => week.lessons.map((lesson) => ({ week, lesson })));
 }
 
 describe('course content', () => {
-  it('has eight weeks and forty-two lessons', () => {
-    expect(courseWeeks).toHaveLength(8);
-    expect(lessonEntries()).toHaveLength(42);
+  it('has sixteen weeks and sixty-nine lessons', () => {
+    expect(courseWeeks).toHaveLength(16);
+    expect(lessonEntries()).toHaveLength(69);
+    expect(programFacts.weeks).toBe(courseWeeks.length);
+  });
+
+  it('covers every week in exactly one phase', () => {
+    const phaseWeekIds = coursePhases.flatMap((phase) => phase.weekIds);
+    expect(coursePhases).toHaveLength(programFacts.phases);
+    expect(new Set(phaseWeekIds).size).toBe(phaseWeekIds.length);
+    expect(new Set(phaseWeekIds)).toEqual(new Set(courseWeeks.map((week) => week.id)));
   });
 
   it('uses unique week and lesson ids', () => {
@@ -28,6 +37,10 @@ describe('course content', () => {
       expect(lesson.goals.en.length).toBe(lesson.goals.fa.length);
       expect(lesson.steps.fa.length).toBeGreaterThanOrEqual(3);
       expect(lesson.steps.en.length).toBe(lesson.steps.fa.length);
+      if (lesson.deepDive) {
+        expect(lesson.deepDive.fa.length).toBeGreaterThanOrEqual(2);
+        expect(lesson.deepDive.en).toHaveLength(lesson.deepDive.fa.length);
+      }
       expect(lesson.terms.length).toBeGreaterThanOrEqual(4);
       expect(lesson.example.code.length).toBeGreaterThan(0);
       expect(lesson.practice.fa.length).toBeGreaterThan(0);
@@ -45,12 +58,31 @@ describe('course content', () => {
     }
   });
 
-  it('starts each week with a positive duration', () => {
+  it('gives every week at least four complete lessons', () => {
     for (const week of courseWeeks) {
+      expect(week.lessons.length).toBeGreaterThanOrEqual(4);
       for (const lesson of week.lessons) {
         expect(lesson.duration).toBeGreaterThan(0);
       }
-      expect(week.lessons.length).toBeGreaterThanOrEqual(5);
+    }
+  });
+
+  it('gives every week precise bilingual goals', () => {
+    for (const week of courseWeeks) {
+      expect(week.goals.fa.length).toBeGreaterThanOrEqual(5);
+      expect(week.goals.en).toHaveLength(week.goals.fa.length);
+      expect(week.goals.fa.every((goal) => goal.length > 0)).toBe(true);
+      expect(week.goals.en.every((goal) => goal.length > 0)).toBe(true);
+    }
+  });
+
+  it('gives every concept note an example in both languages', () => {
+    for (const { lesson } of lessonEntries()) {
+      if (!lesson.deepDive) continue;
+      const examples = conceptExamples[lesson.id];
+      expect(examples, `${lesson.id} needs concept examples`).toBeTruthy();
+      expect(examples.fa).toHaveLength(lesson.deepDive.fa.length);
+      expect(examples.en).toHaveLength(lesson.deepDive.fa.length);
     }
   });
 });

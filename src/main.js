@@ -1,5 +1,5 @@
-import { courseWeeks } from './content/course.js';
-import { dailyCheck, pullRequestGroups, submissionCheck } from './content/checklists.js';
+import { coursePhases, courseWeeks, programFacts } from './content/course.js';
+import { conceptExamples } from './content/concept-examples.js';
 import './styles.css';
 
 const app = document.querySelector('#app');
@@ -39,6 +39,8 @@ const state = {
   status: '',
   confirmReset: false,
 };
+
+let revealObserver = null;
 
 function readStoredObject(key, label, validate) {
   try {
@@ -130,11 +132,6 @@ function saveStorage(key, value, label) {
   }
 }
 
-function progressForItems(groupItems) {
-  const completed = groupItems.filter((item) => state.checklist[item.id]).length;
-  return `${completed}/${groupItems.length}`;
-}
-
 function lessonPosition(lesson) {
   const week = currentWeek();
   return week.lessons.findIndex((item) => item.id === lesson.id);
@@ -144,15 +141,14 @@ function renderHeader() {
   const english = isEnglish();
   return `
     <a class="skip-link" href="#main">${english ? 'Skip to content' : 'پرش به محتوا'}</a>
-    <header class="site-header sticky top-0 z-20">
+    <header class="site-header">
       <a class="brand" href="#" aria-label="${english ? 'Course home' : 'صفحهٔ اصلی دوره'}">
         <span class="brand-mark">W</span>
         <span class="brand-copy"><strong>${escapeHtml(courseTitle)}</strong><small>${english ? 'LEARN BY BUILDING' : 'با ساختن یاد بگیر'}</small></span>
       </a>
       <nav class="header-nav" aria-label="${english ? 'Main navigation' : 'پیمایش اصلی'}">
+        <a href="#phases">${english ? 'Program' : 'برنامه'}</a>
         <a href="#course">${english ? 'Lessons' : 'درس‌ها'}</a>
-        <a href="#roadmap">${english ? 'Roadmap' : 'نقشهٔ راه'}</a>
-        <a href="#checklists">${english ? 'Checklists' : 'چک‌لیست‌ها'}</a>
       </nav>
       <div class="header-actions">
         <button class="theme-switch" type="button" data-action="toggle-theme" aria-label="${english ? 'Switch theme' : 'تغییر پوسته'}" title="${english ? 'Switch theme' : 'تغییر پوسته'}">
@@ -168,19 +164,28 @@ function renderHeader() {
 
 function renderHero() {
   const english = isEnglish();
+  const arrow = english ? '→' : '←';
   return `
-    <section class="hero-panel grid grid-cols-1 md:grid-cols-[1.15fr_0.85fr]">
+    <section class="hero-panel" data-reveal>
+      <div class="hero-glows" aria-hidden="true">
+        <span class="hero-glow glow-a"></span>
+        <span class="hero-glow glow-b"></span>
+        <span class="hero-glow glow-c"></span>
+      </div>
       <div class="hero-copy">
-        <span class="hero-kicker"><i></i>${english ? 'THE COMPLETE EIGHT-WEEK COURSE' : 'دورهٔ کامل هشت هفته‌ای'}</span>
-        <h1>${english ? 'From your first command to a website you can ship.' : 'از اولین فرمان تا وب‌سایتی که می‌توانی منتشر کنی.'}</h1>
-        <p>${
+        <span class="hero-kicker"><i></i>${english ? 'THE COMPLETE SIXTEEN-WEEK PROGRAM' : 'برنامهٔ کامل شانزده‌هفته‌ای'}</span>
+        <h1>${
           english
-            ? 'A practical, evidence-based path: set up your tools, master HTML, Tailwind, and JavaScript, then add APIs, testing, TypeScript, and a deployed capstone.'
-            : 'مسیری عملی و مبتنی بر شاهد: ابزارها را آماده کن، HTML، Tailwind و JavaScript را یاد بگیر، سپس API، آزمون، TypeScript و پروژهٔ پایانی منتشرشده را اضافه کن.'
+            ? 'From your first command to a <span class="grad-text">website you can ship.</span>'
+            : 'از اولین فرمان تا <span class="grad-text">وب‌سایتی که می‌سازی.</span>'
+        }</h1>
+        <p class="hero-lead">${
+          english
+            ? 'A practical, project-based path: set up your tools, master strict TypeScript, build with React and its libraries, then ship a Next.js capstone.'
+            : 'مسیری عملی و پروژه‌محور: ابزارها را آماده کن، TypeScript سخت‌گیرانه را یاد بگیر، با React کتابخانه‌هایش را بساز و در پایان یک کپ‌استون Next.js منتشر کن.'
         }</p>
         <div class="hero-actions">
-          <a class="hero-cta" href="#course">${english ? 'Start learning' : 'شروع یادگیری'} <span>←</span></a>
-          <span class="hero-meta">${totalLessons} ${english ? 'hands-on lessons' : 'درس عملی'} · ${courseWeeks.length} ${english ? 'weeks' : 'هفته'}</span>
+          <a class="hero-cta" href="#course">${english ? 'Start learning' : 'شروع یادگیری'} <span class="cta-arrow">${arrow}</span></a>
         </div>
         <div class="hero-stats" aria-label="${english ? 'Course at a glance' : 'نمای کلی دوره'}">
           <div><strong>${courseWeeks.length}</strong><span>${english ? 'weeks' : 'هفته'}</span></div>
@@ -188,16 +193,69 @@ function renderHero() {
           <div><strong>${totalHours}</strong><span>${english ? 'hours' : 'ساعت'}</span></div>
           <div><strong>${overallPercent()}%</strong><span>${english ? 'complete' : 'تکمیل'}</span></div>
         </div>
-        <div class="course-rule"><strong>${english ? 'Course rule' : 'قانون دوره'}</strong><span>${english ? 'AI may review and explain; it may not write or edit your project code.' : 'هوش مصنوعی می‌تواند توضیح بدهد و بازبینی کند؛ اما نباید کد پروژه را بنویسد یا ویرایش کند.'}</span></div>
+        <div class="course-rule"><strong>${english ? 'Course rule' : 'قانون دوره'}</strong><span>${english ? 'AI starts as a reviewer, becomes an assistant, then an agent. You stay the owner of every line you commit.' : 'هوش مصنوعی از بازبین شروع می‌شود، سپس دستیار و در پایان عامل می‌شود؛ مالک هر خطی که commit می‌کنی تو می‌مانی.'}</span></div>
       </div>
       <div class="hero-art" aria-hidden="true">
-        <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+        <div class="hero-photo">
+          <img
+            src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1100&q=80"
+            alt=""
+            loading="eager"
+            fetchpriority="high"
+          />
+          <span class="photo-shade"></span>
+          <span class="photo-caption">${english ? 'BUILD · BREAK · FIX · SHIP' : 'بساز · بشکن · درست کن · منتشر کن'}</span>
+        </div>
+        <div class="art-orbit orbit-one"></div>
+        <div class="art-orbit orbit-two"></div>
         <div class="art-window">
           <div class="window-bar"><i></i><i></i><i></i><span>my-first-site</span></div>
           <div class="window-code"><span>&lt;html&gt;</span><br />&nbsp;&nbsp;&lt;h1&gt;${english ? 'Hello, world!' : 'سلام، دنیا!'}&lt;/h1&gt;<br /><span>&lt;/html&gt;</span></div>
           <div class="window-status">● ${english ? 'Ready to build' : 'آمادهٔ ساخت'}</div>
         </div>
-        <span class="art-tag tag-html">HTML</span><span class="art-tag tag-css">Tailwind</span><span class="art-tag tag-js">JavaScript</span>
+        <div class="float-card float-card-a"><strong>${totalLessons}</strong><span>${english ? 'hands-on lessons' : 'درس عملی'}</span></div>
+        <div class="float-card float-card-b"><span class="live-dot"></span>${english ? 'Live preview' : 'پیش‌نمایش زنده'}</div>
+        <span class="art-tag tag-html">HTML</span>
+        <span class="art-tag tag-css">Tailwind</span>
+        <span class="art-tag tag-js">JavaScript</span>
+        <span class="art-orb orb-a"></span>
+        <span class="art-orb orb-b"></span>
+      </div>
+    </section>
+  `;
+}
+
+function renderPhases() {
+  const english = isEnglish();
+  const icons = ['icon-purple', 'icon-green', 'icon-amber'];
+  return `
+    <section class="features-section" id="phases">
+      <div class="section-head" data-reveal>
+        <span class="eyebrow">${english ? 'THREE PHASES · THREE GATES' : 'سه فاز · سه دروازه'}</span>
+        <h2>${english ? 'You move forward by passing a gate.' : 'با عبور از دروازه به فاز بعد می‌رسی.'}</h2>
+        <p>${
+          english
+            ? `From ${programFacts.start.en} to ${programFacts.end.en}. ${programFacts.study.en} ${programFacts.submission.en}`
+            : `از ${programFacts.start.fa} تا ${programFacts.end.fa}. ${programFacts.study.fa} ${programFacts.submission.fa}`
+        }</p>
+      </div>
+      <div class="phase-grid">
+        ${coursePhases
+          .map(
+            (phase, index) => `
+          <article class="bento-card phase-card" data-reveal>
+            <span class="bento-icon ${icons[index % icons.length]}">${phase.number}</span>
+            <span class="phase-weeks">${english ? 'Weeks' : 'هفته‌های'} ${phase.weeks}</span>
+            <h4>${escapeHtml(t(phase.title))}</h4>
+            <p>${escapeHtml(t(phase.summary))}</p>
+            <dl class="phase-meta">
+              <div><dt>${english ? 'AI stage' : 'مرحلهٔ AI'}</dt><dd>${escapeHtml(t(phase.aiStage))}</dd></div>
+              <div><dt>${english ? 'Gate' : 'دروازه'}</dt><dd>${escapeHtml(t(phase.gate))}</dd></div>
+            </dl>
+          </article>
+        `,
+          )
+          .join('')}
       </div>
     </section>
   `;
@@ -226,6 +284,37 @@ function renderWeekTabs() {
     .join('');
 }
 
+function renderWeekGoals(week) {
+  const english = isEnglish();
+  const goals = week.goals ? t(week.goals) : [];
+  if (!goals.length) return '';
+  const tones = ['blue', 'purple', 'teal', 'amber'];
+  return `
+    <section class="week-goals-panel" aria-labelledby="week-goals-title">
+      <div class="week-goals-head">
+        <div>
+          <span class="week-goals-eyebrow">${english ? 'THIS WEEK’S TARGETS' : 'اهداف این هفته'}</span>
+          <h3 id="week-goals-title">${english ? `By the end of Week ${week.number}, you can:` : `در پایان هفتهٔ ${week.number} باید بتوانی:`}</h3>
+          <p>${english ? 'These are the exact capabilities you will prove in this week’s lessons and deliverables.' : 'این‌ها توانایی‌های دقیقی هستند که در درس‌ها و خروجی‌های همین هفته اثبات می‌کنی.'}</p>
+        </div>
+        <div class="week-goals-count"><strong>${String(goals.length).padStart(2, '0')}</strong><span>${english ? 'targets' : 'هدف'}</span></div>
+      </div>
+      <ol class="week-goals-grid">
+        ${goals
+          .map(
+            (goal, index) => `
+          <li class="week-goal-item week-goal-tone-${tones[index % tones.length]}">
+            <span class="week-goal-index">${String(index + 1).padStart(2, '0')}</span>
+            <p>${formatRichText(goal)}</p>
+          </li>
+        `,
+          )
+          .join('')}
+      </ol>
+    </section>
+  `;
+}
+
 function renderLessonNavigation(week) {
   return week.lessons
     .map((lesson, index) => {
@@ -247,6 +336,174 @@ function renderLessonNavigation(week) {
     .join('');
 }
 
+const noteTones = ['blue', 'purple', 'teal', 'amber', 'pink'];
+const goalTones = ['blue', 'purple', 'teal'];
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function lessonTerms(lesson) {
+  return lesson.terms
+    .map(([term]) => term.split(' (')[0].trim())
+    .filter((term) => /[A-Za-z]/.test(term))
+    .sort((a, b) => b.length - a.length);
+}
+
+function highlightTerms(segment, terms) {
+  if (!terms.length) return segment;
+  const pattern = terms
+    .map((term) => {
+      const escaped = escapeRegExp(term);
+      const left = /^[A-Za-z0-9_$]/.test(term) ? '(?<![A-Za-z0-9_$])' : '';
+      const right = /[A-Za-z0-9_$]$/.test(term) ? '(?![A-Za-z0-9_$])' : '';
+      return `${left}${escaped}${right}`;
+    })
+    .join('|');
+  try {
+    return segment.replace(
+      new RegExp(`(${pattern})`, 'gi'),
+      '<mark class="term-highlight">$1</mark>',
+    );
+  } catch {
+    return segment;
+  }
+}
+
+const codeTokenPattern =
+  /&lt;\/?[A-Za-z][\s\S]*?&gt;|\b(?:npm|npx|git|tsc|vite|node)(?:\s+[A-Za-z0-9@._/<>="'-]+){1,3}|\b[\w@.-]+\.(?:js|jsx|ts|tsx|json|html|css|md|mjs|nvmrc)\b|\baria-[\w-]+|\bdata-[\w-]+|\^?\d+\.\d+\.\d+(?:-[\w.]+)?|--[\w-]+/g;
+
+function formatRichText(value, terms = []) {
+  const escaped = escapeHtml(value);
+  const inlineParts = escaped.split(/(`[^`]+`)/g);
+  return inlineParts
+    .map((part) => {
+      if (/^`[^`]+`$/.test(part)) {
+        return `<code class="inline-code" dir="ltr">${part.slice(1, -1)}</code>`;
+      }
+      const chunks = [];
+      let last = 0;
+      for (const match of part.matchAll(codeTokenPattern)) {
+        chunks.push(highlightTerms(part.slice(last, match.index), terms));
+        chunks.push(`<code class="inline-code" dir="ltr">${match[0]}</code>`);
+        last = match.index + match[0].length;
+      }
+      chunks.push(highlightTerms(part.slice(last), terms));
+      return chunks.join('');
+    })
+    .join('');
+}
+
+function splitFirstSentence(note) {
+  const trimmed = note.trim();
+  const match = trimmed.match(/^[\s\S]*?(?:[.؛!?](?=\s|$)|[:：](?=\s|$))/);
+  if (!match) return { lead: trimmed, rest: '' };
+  const lead = match[0].trim();
+  const rest = trimmed.slice(match[0].length).trim();
+  return { lead: lead || trimmed, rest };
+}
+
+function noteKeywords(note, terms) {
+  const lower = note.toLocaleLowerCase();
+  return terms
+    .filter((term) => term.length > 2 && lower.includes(term.toLocaleLowerCase()))
+    .slice(0, 3);
+}
+
+function exampleFromNote(note) {
+  const match = note.match(/(?:مثلاً|برای مثال|for example|e\.g\.)[^.!?]*[.!?]?/i);
+  return match ? match[0].trim() : '';
+}
+
+function renderGoals(lesson) {
+  const english = isEnglish();
+  const goals = t(lesson.goals);
+  const terms = lessonTerms(lesson);
+  return `
+    <section class="lesson-section goals-section" aria-labelledby="goals-title">
+      <div class="section-heading goals-heading">
+        <h3 id="goals-title"><span class="section-icon icon-blue">◎</span>${english ? 'What you will learn' : 'هدف‌های یادگیری'}</h3>
+        <p>${english ? 'By the end of this lesson you can do each of these, without copying blindly.' : 'در پایان این درس باید بتوانی هر کدام را مستقل انجام بدهی؛ نه با کپی کورکورانه.'}</p>
+      </div>
+      <ul class="goal-grid">
+        ${goals
+          .map(
+            (goal, index) => `
+          <li class="goal-card goal-tone-${goalTones[index % goalTones.length]}">
+            <span class="goal-index">${english ? 'GOAL' : 'هدف'} ${String(index + 1).padStart(2, '0')}</span>
+            <p>${formatRichText(goal, terms)}</p>
+            <span class="goal-check" aria-hidden="true">✓</span>
+          </li>
+        `,
+          )
+          .join('')}
+      </ul>
+    </section>
+  `;
+}
+
+function renderDeepDive(lesson) {
+  const notes = lesson.deepDive ? t(lesson.deepDive) : [];
+  if (!notes.length) return '';
+  const english = isEnglish();
+  const terms = lessonTerms(lesson);
+  const examples = conceptExamples[lesson.id]?.[state.language] ?? [];
+  return `
+    <section class="deep-dive-card concept-notes-card" aria-labelledby="concept-notes-title">
+      <header class="concept-notes-head">
+        <div class="concept-notes-copy">
+          <span class="concept-eyebrow">${english ? 'CONCEPT NOTES' : 'درس‌نامهٔ مفهومی'}</span>
+          <h3 id="concept-notes-title"><span class="section-icon icon-purple">§</span>${english ? 'Key ideas, one example each' : 'ایده‌های کلیدی، هر کدام با یک مثال'}</h3>
+          <p>${english ? 'Read the idea, study the example, then use the terms below as your checklist.' : 'ایده را بخوان، مثال را ببین و اصطلاح‌های پایین هر کارت را به‌عنوان چک‌لیست ذهنی مرور کن.'}</p>
+        </div>
+        <div class="concept-notes-meta" aria-label="${english ? 'Concept notes summary' : 'خلاصهٔ درس‌نامه'}">
+          <span><strong>${notes.length}</strong>${english ? 'ideas' : 'ایده'}</span>
+          <span><strong>${terms.length}</strong>${english ? 'terms' : 'اصطلاح'}</span>
+          <span><strong>${examples.length || notes.length}</strong>${english ? 'examples' : 'مثال'}</span>
+        </div>
+      </header>
+      <div class="concept-notes">
+        ${notes
+          .map((note, index) => {
+            const tone = noteTones[index % noteTones.length];
+            const { lead, rest } = splitFirstSentence(note);
+            const example = (examples[index] || exampleFromNote(note) || '')
+              .replace(/^(?:مثال|برای مثال|Example|For example)\s*[:：-]\s*/i, '')
+              .trim();
+            const keywords = noteKeywords(note, terms);
+            return `
+            <article class="note-card note-tone-${tone}">
+              <div class="note-rail" aria-hidden="true">
+                <span class="note-index">${String(index + 1).padStart(2, '0')}</span>
+              </div>
+              <div class="note-content">
+                <span class="note-kicker">${english ? 'KEY IDEA' : 'ایدهٔ کلیدی'} ${String(index + 1).padStart(2, '0')}</span>
+                <p class="note-lead">${formatRichText(lead, terms)}</p>
+                ${rest ? `<p class="note-text">${formatRichText(rest, terms)}</p>` : ''}
+                ${
+                  keywords.length
+                    ? `<div class="note-keywords">${keywords
+                        .map(
+                          (keyword) => `<span class="note-keyword">${escapeHtml(keyword)}</span>`,
+                        )
+                        .join('')}</div>`
+                    : ''
+                }
+                ${
+                  example
+                    ? `<div class="note-example"><span class="note-example-label">${english ? 'EXAMPLE' : 'مثال'}</span><p>${formatRichText(example, terms)}</p></div>`
+                    : ''
+                }
+              </div>
+            </article>
+          `;
+          })
+          .join('')}
+      </div>
+    </section>
+  `;
+}
+
 function renderConcepts(lesson) {
   return lesson.terms
     .map(
@@ -258,6 +515,23 @@ function renderConcepts(lesson) {
   `,
     )
     .join('');
+}
+
+function renderSteps(lesson) {
+  return `
+    <ol class="step-flow">
+      ${t(lesson.steps)
+        .map(
+          (step, index) => `
+        <li class="step-node">
+          <span class="step-badge">${String(index + 1).padStart(2, '0')}</span>
+          <div class="step-content"><p>${escapeHtml(step)}</p></div>
+        </li>
+      `,
+        )
+        .join('')}
+    </ol>
+  `;
 }
 
 function renderLessonPager(lesson) {
@@ -295,12 +569,9 @@ function renderLesson(lesson) {
       <h2 id="lesson-title">${escapeHtml(t(lesson.title))}</h2>
       <p class="lesson-summary">${escapeHtml(t(lesson.summary))}</p>
 
-      <section class="lesson-section">
-        <h3><span class="section-icon icon-blue">◎</span>${english ? 'What you will learn' : 'هدف‌های یادگیری'}</h3>
-        <ul class="lesson-list">${t(lesson.goals)
-          .map((goal) => `<li>${escapeHtml(goal)}</li>`)
-          .join('')}</ul>
-      </section>
+      ${renderGoals(lesson)}
+
+      ${renderDeepDive(lesson)}
 
       <section class="lesson-section">
         <div class="section-heading">
@@ -311,10 +582,11 @@ function renderLesson(lesson) {
       </section>
 
       <section class="lesson-section">
-        <h3><span class="section-icon icon-amber">↗</span>${english ? 'Do it step by step' : 'گام‌به‌گام انجام بده'}</h3>
-        <ol class="step-list">${t(lesson.steps)
-          .map((step) => `<li>${escapeHtml(step)}</li>`)
-          .join('')}</ol>
+        <div class="section-heading">
+          <h3><span class="section-icon icon-amber">↗</span>${english ? 'Follow the step graph' : 'گراف گام‌ها را دنبال کن'}</h3>
+          <p>${english ? 'Each node is one action. Finish them in order.' : 'هر گره یک کار است؛ به ترتیب انجام بده.'}</p>
+        </div>
+        ${renderSteps(lesson)}
       </section>
 
       <section class="example-card">
@@ -408,190 +680,6 @@ function renderProgressTools() {
   `;
 }
 
-function renderCheckGroup(group) {
-  const groupItems = group.sections.flatMap((section) => section.items);
-  return `
-    <details class="checklist-group">
-      <summary>
-        <span class="group-title">${isEnglish() ? group.title : group.fa}</span>
-        <span class="group-counter">${progressForItems(groupItems)} ${isEnglish() ? 'items' : 'مورد'}</span>
-      </summary>
-      ${group.sections
-        .map(
-          (section) => `
-        <section class="checklist-subsection">
-          <h4>${isEnglish() ? section.title : section.fa}</h4>
-          ${section.items
-            .map(
-              (item) => `
-            <label class="checklist-row">
-              <input type="checkbox" data-action="checklist" data-check-id="${item.id}" ${state.checklist[item.id] ? 'checked' : ''} />
-              <span>${isEnglish() ? item.en : item.fa}</span>
-            </label>
-          `,
-            )
-            .join('')}
-        </section>
-      `,
-        )
-        .join('')}
-    </details>
-  `;
-}
-
-function allRequirementItems() {
-  return [
-    ...dailyCheck,
-    ...pullRequestGroups.flatMap((group) => group.sections.flatMap((section) => section.items)),
-    ...submissionCheck,
-  ];
-}
-
-function buildPullRequestTemplate() {
-  const lines = [
-    '## Week 01: Your Tools — <your full name>',
-    '',
-    '**Live link:** <Netlify or Vercel URL>',
-    '',
-    '![Screenshot](<drag your screenshot here>)',
-    '',
-  ];
-  for (const group of pullRequestGroups) {
-    lines.push(`### ${group.title}`, '');
-    for (const section of group.sections) {
-      lines.push(section.title);
-      for (const item of section.items) lines.push(`- [ ] ${item.en}`);
-      lines.push('');
-    }
-  }
-  lines.push('### Before I submit', '');
-  for (const item of submissionCheck) lines.push(`- [ ] ${item.en}`);
-  lines.push(
-    '',
-    '### Why anything starting with VITE_ is public',
-    '',
-    '<your answer>',
-    '',
-    '### What I built and how',
-    '',
-    '<a few lines>',
-    '',
-    '### Hardest problem and how I solved it',
-    '',
-    '1. <the problem>',
-    '2. <what I tried>',
-    '3. <what worked, and why>',
-  );
-  return lines.join('\n');
-}
-
-function renderMilestones() {
-  const english = isEnglish();
-  return `
-    <div class="milestones-card">
-      <div class="check-section-title"><span class="section-icon icon-green">★</span><div>
-        <h3>${english ? 'Full-course milestones' : 'نقاط عطف کل دوره'}</h3>
-        <p>${english ? 'One outcome per week. Check it only when the week project is truly done.' : 'یک نتیجه برای هر هفته. فقط وقتی پروژهٔ آن هفته واقعاً تمام شد تیک بزن.'}</p>
-      </div></div>
-      <div class="milestone-grid">
-        ${courseWeeks
-          .map((week) => {
-            const id = `milestone-${week.id}`;
-            return `
-              <label class="milestone-item">
-                <input type="checkbox" data-action="checklist" data-check-id="${id}" ${state.checklist[id] ? 'checked' : ''} />
-                <span class="milestone-copy">
-                  <strong>${english ? `Week ${week.number}` : `هفتهٔ ${week.number}`} · ${escapeHtml(t(week.title))}</strong>
-                  <small>${escapeHtml(t(week.outcome))}</small>
-                </span>
-              </label>
-            `;
-          })
-          .join('')}
-      </div>
-    </div>
-  `;
-}
-
-function renderWeekOneRequirements() {
-  const english = isEnglish();
-  const allItems = allRequirementItems();
-  return `
-    <div class="daily-check-card">
-      <div class="check-section-title"><span class="section-icon icon-blue">✓</span><div>
-        <h3>${english ? 'Every day, before you push' : 'هر روز، پیش از push'}</h3>
-        <p>${progressForItems(dailyCheck)} ${english ? 'daily checks' : 'بررسی روزانه'}</p>
-      </div></div>
-      ${dailyCheck
-        .map(
-          (item) => `
-        <label class="checklist-row"><input type="checkbox" data-action="checklist" data-check-id="${item.id}" ${state.checklist[item.id] ? 'checked' : ''} />
-        <span>${english ? item.en : item.fa}</span></label>
-      `,
-        )
-        .join('')}
-    </div>
-
-    <div class="pr-checklist-card">
-      <div class="check-section-title"><span class="section-icon icon-purple">☷</span><div>
-        <h3>${english ? 'Week 1 pull request checklist' : 'چک‌لیست Pull Request هفتهٔ اول'}</h3>
-        <p>${english ? 'Core, intermediate, and advanced requirements for submission review' : 'موارد اصلی، میانی و پیشرفته؛ برای مرور پیش از تحویل'}</p>
-      </div></div>
-      <p class="checklist-note">${english ? 'These checkboxes record your selections; they do not verify that work was actually done.' : 'این شمارنده فقط وضعیت انتخابی تو را نگه می‌دارد؛ انجام واقعی کار را تأیید نمی‌کند.'}</p>
-      ${pullRequestGroups.map(renderCheckGroup).join('')}
-      <details class="pr-template">
-        <summary>${english ? 'Show copyable PR description template' : 'نمایش متن قابل‌کپی برای توضیحات PR'}</summary>
-        <p>${english ? 'Copy the template, check only completed work, and fill in your own details.' : 'قالب را کپی کن؛ فقط مواردی را که واقعاً انجام داده‌ای تیک بزن و جای‌خالی‌ها را با اطلاعات خودت پُر کن.'}</p>
-        <button class="copy-template" type="button" data-action="copy-template">${english ? 'Copy Markdown template' : 'کپی قالب Markdown'}</button>
-        <span class="copy-status" role="status"></span>
-      </details>
-      <pre class="template-preview" dir="ltr" tabindex="0" aria-label="${english ? 'Pull request description template' : 'قالب توضیحات Pull Request'}">${escapeHtml(buildPullRequestTemplate())}</pre>
-    </div>
-
-    <div class="daily-check-card submit-check-card">
-      <div class="check-section-title"><span class="section-icon icon-green">↗</span><div>
-        <h3>${english ? 'Before I submit' : 'پیش از تحویل نهایی'}</h3>
-        <p>${progressForItems(submissionCheck)} ${english ? 'final checks' : 'بررسی نهایی'}</p>
-      </div></div>
-      ${submissionCheck
-        .map(
-          (item) => `
-        <label class="checklist-row"><input type="checkbox" data-action="checklist" data-check-id="${item.id}" ${state.checklist[item.id] ? 'checked' : ''} />
-        <span>${english ? item.en : item.fa}</span></label>
-      `,
-        )
-        .join('')}
-    </div>
-    <p class="requirements-total">${
-      english
-        ? `Selected checklist progress: ${progressForItems(allItems)}. No item is marked complete automatically.`
-        : `پیشرفت انتخابی چک‌لیست: ${progressForItems(allItems)} مورد. هیچ موردی خودکار انجام‌شده علامت نمی‌خورد.`
-    }</p>
-  `;
-}
-
-function renderChecklists() {
-  const english = isEnglish();
-  return `
-    <section class="requirements-section" id="checklists">
-      <div class="requirements-heading">
-        <span class="eyebrow">${english ? 'THE COURSE CHECKLISTS' : 'چک‌لیست واقعی دوره'}</span>
-        <h2>${english ? 'Track the whole course, honestly.' : 'کل دوره را صادقانه پیگیری کن.'}</h2>
-        <p>${
-          english
-            ? 'Milestones cover all eight weeks. The detailed Week 1 requirements are kept below as the original submission reference.'
-            : 'نقاط عطف همهٔ هشت هفته را پوشش می‌دهند. شرط‌های تفصیلی هفتهٔ اول در پایین به‌عنوان مرجع اصلی تحویل نگه داشته شده‌اند.'
-        }</p>
-      </div>
-      ${renderMilestones()}
-      <details class="week-one-reference" ${state.weekId === 'week-1' ? 'open' : ''}>
-        <summary>${english ? 'Week 1: detailed submission requirements' : 'هفتهٔ اول: شرط‌های تفصیلی تحویل'}</summary>
-        ${renderWeekOneRequirements()}
-      </details>
-    </section>
-  `;
-}
-
 function renderCompletionBanner() {
   if (overallPercent() < 100) return '';
   return `
@@ -603,6 +691,49 @@ function renderCompletionBanner() {
       </div>
     </div>
   `;
+}
+
+function setupMotion() {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const revealItems = app.querySelectorAll('[data-reveal]');
+
+  if (revealObserver) {
+    revealObserver.disconnect();
+    revealObserver = null;
+  }
+
+  if (reduceMotion || !('IntersectionObserver' in window)) {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+  } else {
+    revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          revealObserver?.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' },
+    );
+    revealItems.forEach((item) => revealObserver.observe(item));
+  }
+
+  const hero = app.querySelector('.hero-panel');
+  if (!hero || reduceMotion) return;
+
+  const setPointer = (x, y) => {
+    hero.style.setProperty('--px', x.toFixed(3));
+    hero.style.setProperty('--py', y.toFixed(3));
+  };
+
+  hero.addEventListener('pointermove', (event) => {
+    const rect = hero.getBoundingClientRect();
+    setPointer(
+      (event.clientX - rect.left) / rect.width - 0.5,
+      (event.clientY - rect.top) / rect.height - 0.5,
+    );
+  });
+  hero.addEventListener('pointerleave', () => setPointer(0, 0));
 }
 
 function render() {
@@ -617,56 +748,60 @@ function render() {
   document.documentElement.dataset.theme = state.theme;
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', state.theme === 'dark' ? '#0a1020' : '#f5f7fb');
-  document.title = `${courseTitle} | ${english ? 'A complete eight-week web course' : 'دورهٔ کامل هشت‌هفته‌ای وب'}`;
+    ?.setAttribute('content', state.theme === 'dark' ? '#060a14' : '#f4f6fc');
+  document.title = `${courseTitle} | ${english ? 'A complete sixteen-week frontend program' : 'برنامهٔ کامل شانزده‌هفته‌ای فرانت‌اند'}`;
 
   app.innerHTML = `
     <div class="site-shell">
       ${renderHeader()}
       <main id="main">
         ${renderHero()}
+        ${renderPhases()}
 
         <section class="course-section" id="course">
-          <div class="section-intro">
-            <div>
-              <span class="eyebrow">${english ? 'YOUR LEARNING PATH' : 'مسیر یادگیری تو'}</span>
-              <h2>${english ? 'Eight weeks. One shipped product.' : 'هشت هفته؛ یک محصول منتشرشده.'}</h2>
-              <p>${english ? 'Choose a week, open a lesson, and learn the technical terms in Persian.' : 'هفته را انتخاب کن، درس را باز کن و اصطلاح‌های فنی را با تعریف فارسی یاد بگیر.'}</p>
-            </div>
-            <div class="lesson-total"><strong>${overallPercent()}%</strong><span>${english ? 'course complete' : 'تکمیل دوره'}</span></div>
-          </div>
-          <div class="week-picker" id="roadmap" role="group" aria-label="${english ? 'Choose a week' : 'انتخاب هفته'}">${renderWeekTabs()}</div>
-          <section class="week-overview">
-            <span class="week-number">${week.number}</span>
-            <div class="week-description"><small>${english ? `WEEK ${week.number}` : `هفتهٔ ${week.number}`}</small><h3>${escapeHtml(t(week.title))}</h3><p>${escapeHtml(t(week.subtitle))}</p></div>
-            <div class="week-progress">
-              <div><span>${english ? 'Your progress' : 'پیشرفت هفته'}</span><strong>${complete}/${week.lessons.length}</strong></div>
-              <div class="progress-track" role="progressbar" aria-label="${english ? 'Week progress' : 'پیشرفت هفته'}" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100"><span style="width:${progress}%"></span></div>
-              <p>${escapeHtml(t(week.outcome))}</p>
-            </div>
-          </section>
-          ${state.alert ? `<div class="storage-alert" role="alert">${escapeHtml(state.alert)}</div>` : ''}
-          ${renderCompletionBanner()}
-          <div class="learning-layout grid grid-cols-1 lg:grid-cols-[minmax(210px,0.72fr)_minmax(0,1.7fr)_minmax(220px,0.78fr)]">
-            <aside class="lesson-sidebar" aria-label="${english ? 'Week lessons' : 'درس‌های هفته'}">
-              <div class="sidebar-title"><h3>${english ? 'This week’s lessons' : 'درس‌های این هفته'}</h3><span>${week.lessons.length} ${english ? 'lessons' : 'درس'}</span></div>
-              <div class="lesson-nav">${renderLessonNavigation(week)}</div>
-              <div class="sidebar-tip">✦ ${english ? 'Go at your own pace. Progress stays in this browser.' : 'با سرعت خودت پیش برو؛ پیشرفت در همین مرورگر می‌ماند.'}</div>
+          <div class="course-workspace">
+            <aside class="week-rail" id="roadmap" aria-label="${english ? 'Choose a week' : 'انتخاب هفته'}">
+              <div class="week-rail-head">
+                <h3>${english ? 'Weeks' : 'هفته‌ها'}</h3>
+                <span>${courseWeeks.length} ${english ? 'weeks' : 'هفته'}</span>
+              </div>
+              <div class="week-picker" role="group" aria-label="${english ? 'Choose a week' : 'انتخاب هفته'}">${renderWeekTabs()}</div>
             </aside>
-            ${renderLesson(lesson)}
-            ${renderGlossary(lesson)}
+            <div class="course-main">
+              <section class="week-overview">
+                <span class="week-number">${week.number}</span>
+                <div class="week-description"><small>${english ? `WEEK ${week.number}` : `هفتهٔ ${week.number}`}</small><h3>${escapeHtml(t(week.title))}</h3><p>${escapeHtml(t(week.subtitle))}</p></div>
+                <div class="week-progress">
+                  <div><span>${english ? 'Your progress' : 'پیشرفت هفته'}</span><strong>${complete}/${week.lessons.length}</strong></div>
+                  <div class="progress-track" role="progressbar" aria-label="${english ? 'Week progress' : 'پیشرفت هفته'}" aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100"><span style="width:${progress}%"></span></div>
+                  <p>${escapeHtml(t(week.outcome))}</p>
+                </div>
+              </section>
+              ${renderWeekGoals(week)}
+              ${state.alert ? `<div class="storage-alert" role="alert">${escapeHtml(state.alert)}</div>` : ''}
+              ${renderCompletionBanner()}
+              <div class="learning-layout">
+                <aside class="lesson-sidebar" aria-label="${english ? 'Week lessons' : 'درس‌های هفته'}">
+                  <div class="sidebar-title"><h3>${english ? 'This week’s lessons' : 'درس‌های این هفته'}</h3><span>${week.lessons.length} ${english ? 'lessons' : 'درس'}</span></div>
+                  <div class="lesson-nav">${renderLessonNavigation(week)}</div>
+                  <div class="sidebar-tip">✦ ${english ? 'Go at your own pace. Progress stays in this browser.' : 'با سرعت خودت پیش برو؛ پیشرفت در همین مرورگر می‌ماند.'}</div>
+                </aside>
+                ${renderLesson(lesson)}
+                ${renderGlossary(lesson)}
+              </div>
+            </div>
           </div>
         </section>
-        ${renderChecklists()}
       </main>
       <footer class="site-footer">
         <span class="footer-mark">W</span>
         <p>${english ? 'A small step every day becomes a skill you can build with.' : 'یک گام کوچک در هر روز، به مهارتی تبدیل می‌شود که با آن می‌توانی بسازی.'}</p>
-        <span>HTML · Tailwind CSS · JavaScript · TypeScript</span>
+        <span class="footer-stack">HTML · Tailwind CSS · JavaScript · TypeScript</span>
       </footer>
     </div>
   `;
   bindEvents();
+  setupMotion();
 }
 
 function validateProgressPayload(payload) {
@@ -755,15 +890,6 @@ function bindEvents() {
     });
   });
 
-  app.querySelectorAll('[data-action="checklist"]').forEach((input) => {
-    input.addEventListener('change', () => {
-      state.checklist = { ...state.checklist, [input.dataset.checkId]: input.checked };
-      saveStorage(checklistKey, state.checklist, 'چک‌لیست');
-      state.status = '';
-      render();
-    });
-  });
-
   app.querySelector('[data-action="lesson-practice"]')?.addEventListener('change', (event) => {
     state.progress = {
       ...state.progress,
@@ -821,22 +947,6 @@ function bindEvents() {
           )
           .join('')
       : `<p class="no-results">${isEnglish() ? 'No matching terms.' : 'اصطلاحی پیدا نشد.'}</p>`;
-  });
-
-  app.querySelector('[data-action="copy-template"]')?.addEventListener('click', async (event) => {
-    const status = event.currentTarget.parentElement.querySelector('.copy-status');
-    try {
-      await navigator.clipboard.writeText(buildPullRequestTemplate());
-      if (status) status.textContent = isEnglish() ? 'Template copied.' : 'قالب کپی شد.';
-    } catch (error) {
-      if (status) {
-        status.textContent = `${
-          isEnglish()
-            ? 'Copy failed; select the preview text manually.'
-            : 'کپی خودکار انجام نشد؛ متن را دستی از پیش‌نمایش انتخاب کن.'
-        } (${error.message})`;
-      }
-    }
   });
 
   app.querySelector('[data-action="export-progress"]')?.addEventListener('click', () => {
