@@ -235,8 +235,8 @@ function renderPhases() {
         <h2>${english ? 'You move forward by passing a gate.' : 'با عبور از دروازه به فاز بعد می‌رسی.'}</h2>
         <p>${
           english
-            ? `From ${programFacts.start.en} to ${programFacts.end.en}. ${programFacts.study.en} ${programFacts.submission.en}`
-            : `از ${programFacts.start.fa} تا ${programFacts.end.fa}. ${programFacts.study.fa} ${programFacts.submission.fa}`
+            ? `${programFacts.study.en} ${programFacts.submission.en}`
+            : `${programFacts.study.fa} ${programFacts.submission.fa}`
         }</p>
       </div>
       <div class="phase-grid">

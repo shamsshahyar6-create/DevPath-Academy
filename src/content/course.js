@@ -25,11 +25,11 @@ export const coursePhases = [
     weekIds: ['week-1', 'week-2', 'week-3', 'week-4', 'week-5'],
     aiStage: { fa: 'بازبین', en: 'Reviewer' },
     gate: {
-      fa: 'دروازهٔ ۱ · سه‌شنبه ۲۴ نوامبر، تغییر زنده پنجشنبه ۲۶ نوامبر',
-      en: 'Gate 1 · Tue 24 Nov, live change Thu 26 Nov',
+      fa: 'دروازهٔ ۱ · تغییر زنده',
+      en: 'Gate 1 · live change',
     },
     summary: {
-      fa: 'ابزارها، TypeScript سخت‌گیرانه و fetch واقعی. در دروازهٔ ۱ هیچ AI استفاده نمی‌کنی.',
+      fa: 'ابزارها، TypeScript سخت‌گیرانه و fetch واقعی. در دروازهٔ ۱ از هیچ AI استفاده نمی‌کنی.',
       en: 'Tools, strict TypeScript, and real fetching. Gate 1 is completed with no AI at all.',
     },
   },
@@ -41,8 +41,8 @@ export const coursePhases = [
     weekIds: ['week-6', 'week-7', 'week-8', 'week-9', 'week-10', 'week-11', 'week-12', 'week-13'],
     aiStage: { fa: 'دستیار', en: 'Assistant' },
     gate: {
-      fa: 'دروازهٔ ۲ · چهارشنبه ۲۰ ژانویه، تغییر زنده پنجشنبه ۲۱ ژانویه',
-      en: 'Gate 2 · Wed 20 Jan, live change Thu 21 Jan',
+      fa: 'دروازهٔ ۲ · تغییر زنده',
+      en: 'Gate 2 · live change',
     },
     summary: {
       fa: 'React، Router، Query و فرم‌ها. AI فقط قطعه‌های کوچک و مکانیکی می‌نویسد و تو هر خط را بررسی می‌کنی.',
@@ -57,8 +57,8 @@ export const coursePhases = [
     weekIds: ['week-14', 'week-15', 'week-16'],
     aiStage: { fa: 'عامل', en: 'Agent' },
     gate: {
-      fa: 'دروازهٔ ۳ · پنجشنبه ۱۱ فوریه، دموی زنده و تغییر زنده',
-      en: 'Gate 3 · Thu 11 Feb, live demo and live change',
+      fa: 'دروازهٔ ۳ · دموی زنده و تغییر زنده',
+      en: 'Gate 3 · live demo and live change',
     },
     summary: {
       fa: 'Next.js، SEO و کپ‌استون. AI روی ticketهای کوچک کار می‌کند و تو کل diff را مرور می‌کنی.',

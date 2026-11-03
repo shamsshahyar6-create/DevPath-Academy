@@ -115,6 +115,20 @@ h4,
 h5,
 p {
   text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+p,
+li,
+dd,
+dt,
+blockquote,
+figcaption,
+label,
+td,
+th,
+summary {
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -197,7 +211,8 @@ summary:focus-visible {
   min-height: 76px;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.5rem;
   margin-top: 18px;
   padding: 0.7rem 1.15rem;
   border: 1px solid var(--line);
@@ -210,20 +225,26 @@ summary:focus-visible {
 
 .brand {
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 0.75rem;
   color: var(--ink);
   text-decoration: none;
 }
 
+.brand-copy {
+  min-width: 0;
+}
+
 .brand-mark,
 .footer-mark {
   position: relative;
   display: grid;
-  width: 46px;
-  height: 46px;
+  min-width: 46px;
+  min-height: 46px;
   flex: 0 0 auto;
   place-items: center;
+  padding: 0.35rem;
   border-radius: 14px;
   background: var(--grad);
   box-shadow: 0 10px 24px -10px rgba(47, 92, 246, 0.8);
@@ -307,10 +328,10 @@ summary:focus-visible {
 
 .theme-switch {
   display: grid;
-  width: 42px;
-  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
   place-items: center;
-  padding: 0;
+  padding: 0.3rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);
@@ -1158,9 +1179,9 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
   }
 }
 
-.bento-card:nth-child(3),
-.bento-card:nth-child(4),
-.bento-card:nth-child(5) {
+.bento > .bento-card:nth-child(3),
+.bento > .bento-card:nth-child(4),
+.bento > .bento-card:nth-child(5) {
   grid-column: span 4;
 }
 
@@ -1288,9 +1309,10 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
 
 .bento-icon {
   display: inline-grid;
-  width: 52px;
-  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
   place-items: center;
+  padding: 0.3rem;
   border-radius: 15px;
   font-family: var(--font-display);
   font-size: 1.15rem;
@@ -1380,7 +1402,7 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
 
 .course-workspace {
   display: grid;
-  grid-template-columns: 264px minmax(0, 1fr);
+  grid-template-columns: minmax(min(15rem, 38%), min(17rem, 38%)) minmax(0, 1fr);
   align-items: start;
   gap: 1.25rem;
   margin-top: 1.25rem;
@@ -1388,6 +1410,8 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
 
 .course-main {
   min-width: 0;
+  container-type: inline-size;
+  container-name: course-main;
 }
 
 .week-rail {
@@ -1419,16 +1443,17 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
 
 .week-picker {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: 0.9rem;
   margin-bottom: 1.2rem;
   scroll-margin-top: 118px;
 }
 
 .week-rail .week-picker {
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  max-height: calc(100vh - 180px);
+  max-height: calc(100vh - 11rem);
   overflow-y: auto;
   margin-bottom: 0;
   padding-inline-end: 4px;
@@ -1446,6 +1471,7 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
 }
 
 .week-rail .week-tab {
+  flex: 0 0 auto;
   min-height: 0;
   padding: 0.8rem 0.85rem;
   border-radius: 16px;
@@ -1460,7 +1486,7 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
 .week-rail .week-tab-subtitle {
   font-size: 0.78rem;
   line-height: 1.6;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
 }
 
 .week-rail .week-tab:hover {
@@ -1470,11 +1496,10 @@ html[lang='en'] .hero-cta:hover .cta-arrow {
 .week-tab {
   position: relative;
   display: grid;
-  min-height: 132px;
+  min-height: 8.25rem;
   align-content: start;
   justify-items: start;
   gap: 0.45rem;
-  overflow: hidden;
   padding: 1.2rem 1.3rem;
   border: 1px solid var(--line);
   border-radius: 20px;
@@ -1585,7 +1610,7 @@ html[dir='rtl'] .week-tab::after {
 
 .week-overview {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(230px, 0.6fr);
+  grid-template-columns: auto minmax(0, 1fr) minmax(min(14rem, 40%), 0.6fr);
   align-items: center;
   gap: 1.35rem;
   margin-bottom: 1.25rem;
@@ -1598,9 +1623,10 @@ html[dir='rtl'] .week-tab::after {
 
 .week-number {
   display: grid;
-  width: 62px;
-  height: 62px;
+  min-width: 3.875rem;
+  min-height: 3.875rem;
   place-items: center;
+  padding: 0.25rem 0.5rem;
   border-radius: 18px;
   background: var(--grad);
   box-shadow: 0 14px 28px -14px rgba(47, 92, 246, 0.8);
@@ -1823,9 +1849,10 @@ html[dir='rtl'] .week-tab::after {
 
 .lesson-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem 0.75rem;
 }
 
 .lesson-kicker {
@@ -1996,9 +2023,10 @@ html[dir='rtl'] .week-tab::after {
 
 .map-node-icon {
   display: grid;
-  width: 28px;
-  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
   place-items: center;
+  padding: 0.15rem;
   border-radius: 9px;
   font-family: var(--font-display);
   font-size: 0.78rem;
@@ -2051,10 +2079,11 @@ html[dir='rtl'] .week-tab::after {
 
 .section-icon {
   display: inline-grid;
-  width: 34px;
-  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
   flex: 0 0 auto;
   place-items: center;
+  padding: 0.2rem;
   border-radius: 11px;
   font-family: var(--font-display);
   font-size: 0.85rem;
@@ -2095,6 +2124,7 @@ html[dir='rtl'] .week-tab::after {
 .step-node {
   position: relative;
   display: flex;
+  min-width: 0;
   gap: 0.85rem;
   padding-bottom: 0.9rem;
 }
@@ -2121,10 +2151,11 @@ html[dir='rtl'] .week-tab::after {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 36px;
-  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   flex: 0 0 auto;
   place-items: center;
+  padding: 0.2rem;
   border: 1px solid color-mix(in srgb, var(--brand-2) 40%, var(--line));
   border-radius: 12px;
   background: var(--surface);
@@ -2136,6 +2167,7 @@ html[dir='rtl'] .week-tab::after {
 
 .step-content {
   flex: 1;
+  min-width: 0;
   padding: 0.5rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -2155,6 +2187,7 @@ html[dir='rtl'] .week-tab::after {
   color: var(--muted);
   font-size: 0.94rem;
   line-height: 1.95;
+  overflow-wrap: anywhere;
 }
 
 .concept-grid {
@@ -2165,6 +2198,7 @@ html[dir='rtl'] .week-tab::after {
 }
 
 .concept-card {
+  min-width: 0;
   padding: 0.95rem 1rem;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -2186,6 +2220,7 @@ html[dir='rtl'] .week-tab::after {
   font-family: var(--font-display);
   font-size: 0.92rem;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .concept-card p,
@@ -2194,6 +2229,7 @@ html[dir='rtl'] .week-tab::after {
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.9;
+  overflow-wrap: anywhere;
 }
 
 .deep-dive-card,
@@ -2381,8 +2417,8 @@ html[dir='rtl'] .week-tab::after {
 
 .glossary-panel input {
   width: 100%;
-  height: 44px;
-  padding: 0 0.85rem;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 11px;
   background: var(--surface-2);
@@ -2689,10 +2725,11 @@ html[dir='rtl'] .week-tab::after {
 
 .completion-mark {
   display: grid;
-  width: 46px;
-  height: 46px;
+  min-width: 46px;
+  min-height: 46px;
   flex: 0 0 auto;
   place-items: center;
+  padding: 0.25rem;
   border-radius: 50%;
   background: var(--success);
   color: #fff;
@@ -2815,7 +2852,7 @@ html[dir='rtl'] .week-tab::after {
   min-height: 34px;
   align-items: center;
   justify-content: center;
-  padding: 0 0.75rem;
+  padding: 0.2rem 0.75rem;
   border: 1px solid var(--line);
   border-radius: 9px;
   background: var(--surface);
@@ -2823,6 +2860,7 @@ html[dir='rtl'] .week-tab::after {
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.4;
   transition:
     border-color 200ms ease,
     color 200ms ease,
@@ -2837,13 +2875,14 @@ html[dir='rtl'] .week-tab::after {
 
 .tool-file {
   position: relative;
-  overflow: hidden;
 }
 
 .tool-file input {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
   opacity: 0;
 }
 
@@ -3555,6 +3594,7 @@ html[lang='en'] .cta-content h2 {
 
 .week-goal-item {
   display: flex;
+  min-width: 0;
   align-items: flex-start;
   gap: 0.6rem;
   padding: 0.7rem 0.75rem;
@@ -3574,10 +3614,11 @@ html[lang='en'] .cta-content h2 {
 
 .week-goal-index {
   display: grid;
-  width: 26px;
-  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
   flex: 0 0 auto;
   place-items: center;
+  padding: 0.15rem;
   border-radius: 8px;
   background: var(--tone-soft);
   color: var(--tone);
@@ -3587,6 +3628,7 @@ html[lang='en'] .cta-content h2 {
 }
 
 .week-goal-item p {
+  min-width: 0;
   margin: 0;
   color: var(--ink-2);
   font-size: 0.86rem;
@@ -3612,6 +3654,7 @@ html[lang='en'] .cta-content h2 {
 .goal-card {
   position: relative;
   display: grid;
+  min-width: 0;
   align-content: start;
   gap: 0.45rem;
   padding: 0.8rem 0.85rem;
@@ -3728,6 +3771,7 @@ html[lang='en'] .cta-content h2 {
 .note-card {
   position: relative;
   display: grid;
+  min-width: 0;
   grid-template-columns: 40px minmax(0, 1fr);
   gap: 0.65rem;
 }
@@ -3742,9 +3786,10 @@ html[lang='en'] .cta-content h2 {
   position: relative;
   z-index: 1;
   display: grid;
-  width: 38px;
-  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
   place-items: center;
+  padding: 0.2rem;
   border: 1px solid var(--tone-line);
   border-radius: 12px;
   background: var(--surface);
@@ -3756,6 +3801,7 @@ html[lang='en'] .cta-content h2 {
 }
 
 .note-content {
+  min-width: 0;
   padding: 0.85rem 0.95rem;
   border: 1px solid var(--line);
   border-inline-start: 3px solid var(--tone);
@@ -3777,6 +3823,7 @@ html[lang='en'] .cta-content h2 {
   font-size: 0.94rem;
   font-weight: 700;
   line-height: 1.95;
+  overflow-wrap: anywhere;
 }
 
 .note-text {
@@ -3784,6 +3831,7 @@ html[lang='en'] .cta-content h2 {
   color: var(--muted);
   font-size: 0.9rem;
   line-height: 1.95;
+  overflow-wrap: anywhere;
 }
 
 .note-keywords {
@@ -3794,8 +3842,10 @@ html[lang='en'] .cta-content h2 {
 }
 
 .note-keyword {
+  max-width: 100%;
   padding: 0.15rem 0.45rem;
   border-radius: 99px;
+  overflow-wrap: anywhere;
   background: var(--tone-soft);
   color: var(--tone);
   font-family: var(--font-display);
@@ -3826,6 +3876,7 @@ html[lang='en'] .cta-content h2 {
   color: var(--ink-2);
   font-size: 0.85rem;
   line-height: 1.85;
+  overflow-wrap: anywhere;
 }
 
 .inline-code {
@@ -3835,6 +3886,7 @@ html[lang='en'] .cta-content h2 {
   color: var(--brand);
   font-family: var(--font-mono);
   font-size: 0.86em;
+  overflow-wrap: anywhere;
   unicode-bidi: isolate;
 }
 
@@ -3873,6 +3925,7 @@ html[data-theme='dark'] .inline-code {
   }
   .week-rail .week-picker {
     display: flex;
+    flex-direction: row;
     max-height: none;
     overflow-x: auto;
     overflow-y: hidden;
@@ -3881,7 +3934,7 @@ html[data-theme='dark'] .inline-code {
     scrollbar-width: thin;
   }
   .week-rail .week-tab {
-    flex: 0 0 200px;
+    flex: 0 0 min(13rem, 86%);
     scroll-snap-align: start;
   }
   .hero-panel {
@@ -3902,11 +3955,11 @@ html[data-theme='dark'] .inline-code {
   .bento-stat {
     grid-column: span 12;
   }
-  .bento-card:nth-child(3),
-  .bento-card:nth-child(4) {
+  .bento > .bento-card:nth-child(3),
+  .bento > .bento-card:nth-child(4) {
     grid-column: span 6;
   }
-  .bento-card:nth-child(5) {
+  .bento > .bento-card:nth-child(5) {
     grid-column: span 12;
   }
   .week-overview {
@@ -3956,8 +4009,8 @@ html[data-theme='dark'] .inline-code {
     display: none;
   }
   .brand-mark {
-    width: 40px;
-    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
     border-radius: 12px;
     font-size: 1rem;
   }
@@ -4039,9 +4092,9 @@ html[data-theme='dark'] .inline-code {
 }
 
 @media (max-width: 620px) {
-  .bento-card:nth-child(3),
-  .bento-card:nth-child(4),
-  .bento-card:nth-child(5) {
+  .bento > .bento-card:nth-child(3),
+  .bento > .bento-card:nth-child(4),
+  .bento > .bento-card:nth-child(5) {
     grid-column: span 12;
   }
   .milestone-grid,
@@ -4111,8 +4164,8 @@ html[data-theme='dark'] .inline-code {
     font-size: 0.76rem;
   }
   .theme-switch {
-    width: 38px;
-    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
   }
   .brand-copy small {
     display: none;
@@ -4143,8 +4196,8 @@ html[data-theme='dark'] .inline-code {
     padding: 1.15rem;
   }
   .week-number {
-    width: 52px;
-    height: 52px;
+    min-width: 3.25rem;
+    min-height: 3.25rem;
     font-size: 1.25rem;
   }
   .section-intro h2 {
@@ -4194,6 +4247,22 @@ html[data-theme='dark'] .inline-code {
   .roadmap-weeks,
   .goal-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@container course-main (max-width: 48em) {
+  .learning-layout {
+    grid-template-columns: 1fr;
+  }
+  .lesson-sidebar,
+  .glossary-panel {
+    position: static;
+  }
+  .glossary-panel {
+    grid-column: auto;
+  }
+  .lesson-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
